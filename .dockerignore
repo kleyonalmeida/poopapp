@@ -5,7 +5,11 @@
 **/build
 .env
 .env.*
-apps/mobile
+apps/mobile/android
+apps/mobile/ios
+apps/mobile/test
+apps/mobile/test_live
+**/.flutter-plugins-dependencies
 .codex
 .agents
 .aws

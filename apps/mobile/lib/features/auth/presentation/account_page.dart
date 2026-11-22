@@ -49,6 +49,13 @@ class AccountPage extends ConsumerWidget {
                     Semantics(liveRegion: true, child: Text(auth.message!)),
                   if (auth.busy) const LinearProgressIndicator(),
                   const SizedBox(height: 16),
+                  FilledButton(
+                    onPressed: auth.busy
+                        ? null
+                        : () => context.go('/registros'),
+                    child: const Text('Meus registros'),
+                  ),
+                  const SizedBox(height: 12),
                   OutlinedButton(
                     onPressed: auth.busy ? null : () => context.go('/perfil'),
                     child: const Text('Editar apelido'),

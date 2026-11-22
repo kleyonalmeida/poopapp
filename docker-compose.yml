@@ -1,16 +1,65 @@
 services:
+  certificates:
+    init: true
+    build:
+      context: .
+      dockerfile: infrastructure/web.Dockerfile
+      target: certificates
+    volumes:
+      - trono-local-tls:/tls
+
   api:
     build:
       context: .
       dockerfile: infrastructure/api.Dockerfile
     ports:
-      - "127.0.0.1:5080:8080"
+      - "127.0.0.1:${TRONO_API_PORT:-5080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      certificates:
+        condition: service_completed_successfully
+      migrate:
+        condition: service_completed_successfully
+    volumes:
+      - trono-local-tls:/tls:ro
     environment:
       ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: "http://+:8080;https://+:8443"
+      ASPNETCORE_Kestrel__Certificates__Default__Path: /tls/localhost.crt
+      ASPNETCORE_Kestrel__Certificates__Default__KeyPath: /tls/localhost.key
       ConnectionStrings__Identity: "Host=postgres;Database=trono;Username=trono;Password=${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD no arquivo .env}"
       Identity__SessionCleanup__Enabled: "${IDENTITY_SESSION_CLEANUP_ENABLED:-false}"
       Identity__SessionCleanup__BatchSize: "${IDENTITY_SESSION_CLEANUP_BATCH_SIZE:-100}"
       Identity__SessionCleanup__IntervalMinutes: "${IDENTITY_SESSION_CLEANUP_INTERVAL_MINUTES:-15}"
+
+  web:
+    build:
+      context: .
+      dockerfile: infrastructure/web.Dockerfile
+      target: web
+    ports:
+      - "127.0.0.1:${TRONO_WEB_PORT:-8443}:8443"
+    depends_on:
+      api:
+        condition: service_started
+      certificates:
+        condition: service_completed_successfully
+    volumes:
+      - trono-local-tls:/tls:ro
+
+  migrate:
+    init: true
+    build:
+      context: .
+      dockerfile: infrastructure/api.Dockerfile
+      target: migrations
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__Identity: "Host=postgres;Database=trono;Username=trono;Password=${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD no arquivo .env}"
 
   postgres:
     image: postgis/postgis:17-3.5
@@ -19,14 +68,15 @@ services:
       POSTGRES_USER: trono
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD no arquivo .env}
     ports:
-      - "127.0.0.1:5432:5432"
+      - "127.0.0.1:${TRONO_DB_PORT:-5432}:5432"
     volumes:
       - trono-postgres:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U trono -d trono"]
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U trono -d trono"]
       interval: 5s
       timeout: 5s
       retries: 10
 
 volumes:
   trono-postgres:
+  trono-local-tls:

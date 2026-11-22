@@ -8,6 +8,9 @@ import '../features/auth/presentation/own_profile_page.dart';
 import '../features/auth/presentation/own_settings_page.dart';
 import '../features/auth/presentation/account_deletion_page.dart';
 import '../features/home/presentation/home_page.dart';
+import '../features/records/presentation/records_page.dart';
+import '../features/records/presentation/record_editor_page.dart';
+import '../features/records/domain/records.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final router = GoRouter(
@@ -23,6 +26,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           account == null) {
         return '/entrar';
       }
+      if (state.uri.path.startsWith('/registros') && account == null) {
+        return '/entrar';
+      }
       if (account != null &&
           {'/', '/entrar', '/cadastro'}.contains(state.uri.path)) {
         return '/conta';
@@ -30,6 +36,24 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
+      GoRoute(
+        path: '/registros',
+        builder: (context, state) => const RecordsPage(),
+      ),
+      GoRoute(
+        path: '/registros/novo',
+        builder: (context, state) => const RecordEditorPage(),
+      ),
+      GoRoute(
+        path: '/registros/editar',
+        builder: (context, state) => state.extra is RecordEntry
+            ? RecordEditorPage(entry: state.extra! as RecordEntry)
+            : const Scaffold(
+                body: Center(
+                  child: Text('Registro indisponível. Abra seu histórico.'),
+                ),
+              ),
+      ),
       GoRoute(path: '/', builder: (context, state) => const HomePage()),
       GoRoute(
         path: '/entrar',

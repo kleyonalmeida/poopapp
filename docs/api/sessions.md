@@ -66,7 +66,7 @@ Me/logout sem credencial válida retornam 401 ProblemDetails com desafio `WWW-Au
 
 Aplicar migrations explicitamente conforme [cadastro](registration.md); não há atualização automática no startup. A migration é aditiva e preserva contas. Reverter somente essa migration elimina as sessões e força novos logins; não executar reversões em ambientes compartilhados sem plano e autorização.
 
-O Compose continua expondo somente HTTP para o smoke de infraestrutura. Login e `/me` requerem TLS no host ou proxy confiável, como descrito no contrato de cadastro. Não foram confiados forwarded headers automaticamente. O handler resolve o banco sob demanda, preservando o healthcheck público sem credenciais e sem configuração de conexão.
+O Compose oferece agora a [prévia local HTTPS](../operations/local-preview.md), mantendo o HTTP direto apenas para sondas e rejeição de identidade sem TLS. O gateway verifica o HTTPS da API; não foram confiados forwarded headers automaticamente. Fora do Compose, login e `/me` requerem TLS no host ou proxy confiável, como descrito no contrato de cadastro. O handler resolve o banco sob demanda, preservando o healthcheck público sem credenciais e sem configuração de conexão.
 
 Os resumos padrão de requisição de `Microsoft.AspNetCore.Hosting.Diagnostics` foram limitados a Warning para evitar registrar queries com credenciais mesmo quando rejeitadas. Outros logs permanecem ativos, sem logging de dados sensíveis do EF ou de corpos de autenticação. A configuração de logs de um proxy externo ainda pertence à implantação.
 

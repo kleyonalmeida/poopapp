@@ -73,6 +73,15 @@ class AuthSession {
   Future<void> register(String email, String password) =>
       _exclusive(() => api.register(email.trim(), password));
   Future<AuthAccount> account() => _exclusive(() => _account());
+  Future<T> authenticated<T>(
+    Future<T> Function(String accessToken) action, {
+    bool readOnly = false,
+  }) => _exclusive(() async {
+    if (readOnly) return _withAccess(action);
+    // Renew only in a safe read before writing. The write itself is sent once.
+    await _account();
+    return _withAccess(action, canRefresh: false);
+  });
   Future<String?> updateNickname(String? nickname) => _exclusive(
     () => _withAccess((access) => api.updateNickname(access, nickname)),
   );

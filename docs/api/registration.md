@@ -23,7 +23,7 @@ Respostas de cadastro usam `Cache-Control: no-store`. Não há cookie, token, ha
 
 E-mail sofre trim, validação de um único endereço sem nome de exibição e limite de 254 caracteres. Identity normaliza para pesquisa; índices únicos em `NormalizedEmail` e `NormalizedUserName` protegem concorrência. Senha deve ter 12–128 caracteres, não pode conter apenas espaços e é preservada sem trim; não há exigência de símbolos, números ou caixa. ASP.NET Core Identity valida as invariantes e armazena o hash em seu formato versionado, sem criptografia própria.
 
-Cadastro não confirma o e-mail, não autentica nem publica perfil. Login e sessões são operações separadas, descritas em [sessions.md](sessions.md). Confirmação/recuperação e perfil ainda não foram implementados. Não há teste de 401/403 por recurso nesta rota de criação pública, sem ID de entrada ou recurso de terceiro.
+Cadastro não confirma o e-mail, não autentica nem publica perfil. Login e sessões são operações separadas, descritas em [sessions.md](sessions.md). Confirmação/recuperação seguem pendentes; o [apelido privado](own-profile.md) já pode ser editado após login. Não há teste de 401/403 por recurso nesta rota de criação pública, sem ID de entrada ou recurso de terceiro.
 
 ## Proteção contra abuso
 
@@ -53,6 +53,6 @@ dotnet ef database update \
   --context Trono.Modules.Identity.Infrastructure.IdentityDbContext
 ```
 
-O Compose fornece a conexão interna para a API, mas expõe somente HTTP de desenvolvimento para o healthcheck. Para usar o cadastro, configurar um endpoint HTTPS no host (`dotnet run --project apps/api/src/Trono.Api --urls https://localhost:7080`, com certificado de desenvolvimento configurado) ou um proxy TLS com encaminhamento confiável. Não desabilitar a exigência de HTTPS para contornar o ambiente.
+O Compose fornece a conexão interna e agora oferece a [prévia local por HTTPS](../operations/local-preview.md) em `https://localhost:8443`, com gateway e upstream TLS verificado. O HTTP direto de desenvolvimento permanece exclusivo de sondas e rejeita cadastro. Fora do Compose, configurar um endpoint HTTPS no host (`dotnet run --project apps/api/src/Trono.Api --urls https://localhost:7080`, com certificado configurado) ou proxy TLS confiável. Não desabilitar a exigência de HTTPS para contornar o ambiente.
 
 `Down` remove as tabelas do módulo e perderia contas existentes; não é estratégia de rollback de produção. Em ambiente compartilhado, exigir backup e migração corretiva revisada. Nesta entrega, a migration foi aplicada apenas ao PostgreSQL descartável dos testes.

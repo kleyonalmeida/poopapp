@@ -48,6 +48,11 @@ public sealed class ReadinessTests
         await AssertProbeAsync(client, "/health/ready", HttpStatusCode.ServiceUnavailable, "Unhealthy");
 
         await database.Database.MigrateAsync();
+        await AssertProbeAsync(client, "/health/ready", HttpStatusCode.ServiceUnavailable, "Unhealthy");
+        await using var records = new Trono.Modules.Records.Infrastructure.RecordsDbContext(
+            new DbContextOptionsBuilder<Trono.Modules.Records.Infrastructure.RecordsDbContext>()
+                .UseNpgsql(connectionString, options => options.MigrationsHistoryTable("__EFMigrationsHistory", "records")).Options);
+        await records.Database.MigrateAsync();
         await AssertProbeAsync(client, "/health/ready", HttpStatusCode.OK, "Healthy");
         await AssertProbeAsync(client, "/health/live", HttpStatusCode.OK, "Healthy");
     }

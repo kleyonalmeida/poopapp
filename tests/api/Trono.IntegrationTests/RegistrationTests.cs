@@ -30,6 +30,10 @@ public sealed class RegistrationDatabase : IAsyncLifetime
             .UseNpgsql(ConnectionString, postgres => postgres.MigrationsHistoryTable("__EFMigrationsHistory", "identity"))
             .Options);
         await context.Database.MigrateAsync();
+        await using var records = new Trono.Modules.Records.Infrastructure.RecordsDbContext(
+            new DbContextOptionsBuilder<Trono.Modules.Records.Infrastructure.RecordsDbContext>()
+                .UseNpgsql(ConnectionString, postgres => postgres.MigrationsHistoryTable("__EFMigrationsHistory", "records")).Options);
+        await records.Database.MigrateAsync();
     }
     public Task DisposeAsync() => _postgres.DisposeAsync().AsTask();
 

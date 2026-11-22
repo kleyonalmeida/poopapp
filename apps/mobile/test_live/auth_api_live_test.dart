@@ -5,6 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:trono/features/auth/data/dio_auth_api.dart';
 import 'package:trono/features/auth/domain/auth_models.dart';
 import 'package:trono/features/auth/domain/auth_session.dart';
+import 'package:trono/features/records/data/dio_records_repository.dart';
+import 'package:trono/features/records/domain/records.dart';
 import '../test/support/auth_fakes.dart';
 
 class LocalTls extends HttpOverrides {
@@ -47,6 +49,30 @@ void main() {
         expect(account.emailConfirmed, isFalse);
         expect(account.nickname, isNull);
         expect(account.pushNotificationsEnabled, isFalse);
+        final records = DioRecordsRepository(url, session);
+        addTearDown(records.close);
+        final key = newRecordKey();
+        final draft = RecordDraft(
+          occurredAt: DateTime.now().toUtc().subtract(
+            const Duration(minutes: 1),
+          ),
+          type: 'torazona',
+          notes: 'Minha história privada',
+        );
+        final record = await records.create(draft, key);
+        expect((await records.create(draft, key)).id, record.id);
+        expect(
+          (await records.list(0)).items.single.content.notes,
+          'Minha história privada',
+        );
+        final edited = await records.update(
+          record.id,
+          RecordDraft(occurredAt: draft.occurredAt, notes: 'História revisada'),
+        );
+        expect(edited.content.type, isNull);
+        expect(edited.content.notes, 'História revisada');
+        await records.delete(record.id);
+        expect((await records.list(0)).items, isEmpty);
         expect(await session.updatePushNotifications(true), isTrue);
         expect(await session.updateNickname('  Guardiã 👑  '), 'Guardiã 👑');
         expect((await session.account()).nickname, 'Guardiã 👑');

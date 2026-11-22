@@ -6,6 +6,27 @@ import 'package:trono/features/auth/domain/auth_session.dart';
 import 'support/auth_fakes.dart';
 
 void main() {
+  test('Operação autenticada de escrita não repete após 401', () async {
+    final api = FakeAuthApi(DateTime.now);
+    final session = AuthSession(api, MemoryVault());
+    await session.login('pessoa@example.com', 'senha longa privada');
+    var writes = 0;
+    await expectLater(
+      session.authenticated<void>((access) async {
+        writes++;
+        throw const AuthFailure(AuthFailureKind.unauthorized);
+      }),
+      throwsA(
+        isA<AuthFailure>().having(
+          (failure) => failure.kind,
+          'kind',
+          AuthFailureKind.expired,
+        ),
+      ),
+    );
+    expect(writes, 1);
+    expect(api.refreshes, 0);
+  });
   late DateTime now;
   late MemoryVault vault;
   late FakeAuthApi api;

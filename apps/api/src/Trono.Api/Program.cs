@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Trono.Modules.Identity;
 using Trono.Modules.Identity.Presentation;
+using Trono.Modules.Records;
+using Trono.Modules.Records.Presentation;
 
 var builder = WebApplication.CreateBuilder(args);
 // Hosting request summaries include raw query strings, even for rejected credentials.
@@ -9,11 +11,13 @@ builder.Services.AddProblemDetails();
 // Handle malformed request bodies as client errors in every environment.
 builder.Services.Configure<RouteHandlerOptions>(options => options.ThrowOnBadRequest = false);
 builder.Services.AddIdentityModule(builder.Configuration);
+builder.Services.AddRecordsModule(builder.Configuration);
 var app = builder.Build();
 
 app.UseExceptionHandler();
 app.UseStatusCodePages();
 app.UseIdentityTransport();
+app.UseRecordsTransport();
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
@@ -28,6 +32,7 @@ app.MapSessions();
 app.MapOwnProfile();
 app.MapOwnSettings();
 app.MapAccountDeletion();
+app.MapOwnRecords();
 
 app.Run();
 

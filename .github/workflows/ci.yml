@@ -23,7 +23,9 @@ jobs:
       - name: Verify migration snapshot
         env:
           ConnectionStrings__Identity: Host=localhost;Database=design_only;Username=design_only
-        run: dotnet ef migrations has-pending-model-changes --project apps/api/src/Trono.Modules.Identity --startup-project apps/api/src/Trono.Api --configuration Release --no-build
+        run: |
+          dotnet ef migrations has-pending-model-changes --context IdentityDbContext --project apps/api/src/Trono.Modules.Identity --startup-project apps/api/src/Trono.Api --configuration Release --no-build
+          dotnet ef migrations has-pending-model-changes --context RecordsDbContext --project apps/api/src/Trono.Modules.Records --startup-project apps/api/src/Trono.Api --configuration Release --no-build
 
   mobile:
     runs-on: ubuntu-latest
@@ -59,10 +61,5 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: docker compose config --quiet
-      - run: docker compose up --build --detach --wait
-      - name: Verify API and spatial database
-        run: |
-          test "$(curl --fail --silent --retry 10 --retry-connrefused --retry-delay 2 http://127.0.0.1:5080/health/live)" = Healthy
-          docker compose exec -T postgres psql -U trono -d trono -v ON_ERROR_STOP=1 -c 'SELECT PostGIS_Version();'
-      - if: always()
-        run: docker compose down
+      - name: Verify local preview, TLS, API and spatial database in disposable Compose
+        run: python3 scripts/test_docker_preview.py

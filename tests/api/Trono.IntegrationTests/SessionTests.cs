@@ -64,7 +64,10 @@ public sealed class SessionTests(RegistrationDatabase database) : IClassFixture<
         Assert.Equal(account.Id, json.RootElement.GetProperty("id").GetGuid());
         Assert.Equal(account.Email, json.RootElement.GetProperty("email").GetString());
         Assert.False(json.RootElement.GetProperty("emailConfirmed").GetBoolean());
-        Assert.Equal(3, json.RootElement.EnumerateObject().Count());
+        Assert.Equal(JsonValueKind.Null, json.RootElement.GetProperty("nickname").ValueKind);
+        Assert.False(json.RootElement.GetProperty("pushNotificationsEnabled").GetBoolean());
+        Assert.Equal(new[] { "email", "emailConfirmed", "id", "nickname", "pushNotificationsEnabled" },
+            json.RootElement.EnumerateObject().Select(property => property.Name).OrderBy(name => name, StringComparer.Ordinal));
 
         await using var connection = new NpgsqlConnection(database.ConnectionString);
         await connection.OpenAsync();

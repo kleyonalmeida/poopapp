@@ -73,7 +73,9 @@ def main():
             run(['dotnet', 'tool', 'restore'], env=env)
             run(['dotnet', 'build', 'apps/api/src/Trono.Api/Trono.Api.csproj', '-c', 'Release', '--no-restore', '-m:1', '-p:UseSharedCompilation=false'], env=env)
             run(['dotnet', 'ef', 'database', 'update', '--project', 'apps/api/src/Trono.Modules.Identity', '--startup-project',
-                 'apps/api/src/Trono.Api', '--configuration', 'Release', '--no-build'], env=env)
+                 'apps/api/src/Trono.Api', '--context', 'IdentityDbContext', '--configuration', 'Release', '--no-build'], env=env)
+            run(['dotnet', 'ef', 'database', 'update', '--project', 'apps/api/src/Trono.Modules.Records', '--startup-project',
+                 'apps/api/src/Trono.Api', '--context', 'RecordsDbContext', '--configuration', 'Release', '--no-build'], env=env)
             with socket.socket() as listener:
                 listener.bind(('127.0.0.1', 0))
                 api_port = listener.getsockname()[1]

@@ -14,7 +14,7 @@ Guardar apenas SHA-256 dos tokens aleatórios de 256 bits, nunca tokens puros. S
 
 E-mail: trim, máximo 254 caracteres, formato validado. Senha: 12–128 caracteres, preservada integralmente, sem regras artificiais de composição. Nunca incluir senha, hash ou e-mail em mensagens de erro/log.
 
-Não aplicar migrations automaticamente no startup. Gerar com EF CLI e testar aplicação em PostgreSQL real via Testcontainers. A conexão é fornecida por `ConnectionStrings__Identity`; não gravar valores reais no repositório.
+Não aplicar migrations automaticamente no processo da API. No Compose local, o serviço separado `migrate` as executa em Development antes de liberar a API, conforme solicitação do usuário; não estender essa automação à produção. Gerar migrations com EF CLI e testar aplicação em PostgreSQL real via Testcontainers. A conexão é fornecida por `ConnectionStrings__Identity`; não gravar valores reais no repositório.
 
 Contratos em `docs/api/registration.md` e `docs/api/sessions.md`; testes em `RegistrationTests.cs`, `SessionTests.cs` e `SessionMigrationTests.cs` em `tests/api/Trono.IntegrationTests`.
 
@@ -27,3 +27,5 @@ Próprio perfil. `GET/PATCH /api/v1/me/profile` usam o titular da sessão. A mud
 Preferências da conta. `GET/PATCH /api/v1/me/settings` lê e altera `pushNotificationsEnabled`. O PATCH exige um booleano explícito e altera somente o campo do titular da sessão. O campo é gravado na conta, com padrão `false`, e eliminado com ela. A mesma propriedade está presente em `GET /api/v1/me`. Contrato e testes em `docs/api/own-settings.md` e `OwnSettingsTests.cs`.
 
 A verificação de prontidão de Identity consulta o histórico de migrations via EF, com cancelamento após três segundos. Conexão indisponível ou migrations pendentes tornam `/health/ready` indisponível. Somente a sonda de prontidão executa essa verificação.
+
+Records também participa da prontidão e usa o mesmo PostgreSQL, com schema/histórico próprio. Identity exporta `Contracts/AccountPersistenceContract` somente para referência do ID da conta por FK e lock. Registros e recibos possuem cascatas para a conta: a exclusão existente os remove na mesma transação. Não importar regras de Records para Identity nem conceder leitura das demais colunas internas. Ver ADR-0007 e a cobertura de exclusão/concorrência em `RecordTests.cs`.

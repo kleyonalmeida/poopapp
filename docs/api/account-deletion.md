@@ -21,7 +21,7 @@ Respostas não podem ser armazenadas (`no-store`). HTTP é recusado com 400 ante
 
 ## Efeito atual
 
-UserManager verifica a senha e remove o usuário em uma transação, com lock de linha para serializar solicitações. As FKs existentes removem sessões, histórico de refresh e claims/logins/tokens Identity. Depois do commit, nenhum acesso ou refresh antigo autentica. A exclusão não afeta contas alheias. Uma nova conta com o mesmo e-mail recebe outro UUID e não reativa credenciais anteriores.
+UserManager verifica a senha e remove o usuário em uma transação, com lock de linha para serializar solicitações. As FKs removem sessões, histórico de refresh, claims/logins/tokens Identity, registros privados e recibos de criação de Records. Depois do commit, nenhum acesso ou refresh antigo autentica. A exclusão não afeta contas alheias. Uma nova conta com o mesmo e-mail recebe outro UUID e não reativa credenciais anteriores.
 
 Uma chamada duplicada depois da remoção recebe 401: não há mais identidade que a autorize. A remoção tem efeito único; não há novo evento/recompensa associado. Outras sessões da mesma conta, mesmo renovando em paralelo, não sobrevivem à exclusão. Requisições que já haviam sido autorizadas antes do commit não são canceladas retroativamente.
 
@@ -37,6 +37,6 @@ Confirmar remoção no servidor e limpar storage são resultados independentes: 
 
 ## Limites
 
-Nesta fase, os únicos dados persistidos do usuário são de Identity/sessão. Não existem registros pessoais, perfis sociais, mídia ou recompensas. Novos módulos deverão estender o fluxo de exclusão antes de sua disponibilização. Não há promessa de remoção de backups/logs de infraestrutura ou apagamento físico de bytes do disco.
+Os dados persistidos atuais abrangem Identity/sessão e registros privados/recibos de Records, todos incluídos na exclusão operacional. Não existem perfis sociais, mídia ou recompensas. Novos módulos deverão estender o fluxo de exclusão antes de sua disponibilização. Não há promessa de remoção de backups/logs de infraestrutura ou apagamento físico de bytes do disco. [Escopo de Records](records.md).
 
 Não há undo. Esta implementação não substitui políticas de retenção e operação que ainda precisam ser definidas para beta/produção. Os testes executados pelo agente excluem apenas contas fictícias em bancos descartáveis; nenhuma conta real ou banco persistente foi alterado.
