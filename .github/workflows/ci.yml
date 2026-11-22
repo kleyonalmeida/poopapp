@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  api:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - run: dotnet restore apps/api/Trono.slnx -p:NuGetAuditMode=all
+      - run: dotnet tool restore
+      - run: dotnet format apps/api/Trono.slnx --verify-no-changes --no-restore
+      - run: dotnet build apps/api/Trono.slnx --no-restore --configuration Release
+      - run: dotnet test apps/api/Trono.slnx --no-build --configuration Release
+      - name: Verify migration snapshot
+        env:
+          ConnectionStrings__Identity: Host=localhost;Database=design_only;Username=design_only
+        run: dotnet ef migrations has-pending-model-changes --project apps/api/src/Trono.Modules.Identity --startup-project apps/api/src/Trono.Api --configuration Release --no-build
+
+  mobile:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - name: Install pinned Flutter SDK
+        run: |
+          git clone --depth 1 --branch "$(cat .flutter-version)" https://github.com/flutter/flutter.git "$RUNNER_TEMP/flutter"
+          echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
+      - run: flutter pub get --enforce-lockfile
+      - run: dart format --output=none --set-exit-if-changed lib test test_live
+      - run: flutter analyze
+      - run: flutter test
+      - name: Test mobile client against HTTPS API
+        working-directory: .
+        run: python3 scripts/test_mobile_api.py
+      - run: flutter build apk --debug
+
+  infrastructure:
+    runs-on: ubuntu-latest
+    env:
+      POSTGRES_PASSWORD: ci-local-disposable-password
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker compose config --quiet
+      - run: docker compose up --build --detach --wait
+      - name: Verify API and spatial database
+        run: |
+          test "$(curl --fail --silent --retry 10 --retry-connrefused --retry-delay 2 http://127.0.0.1:5080/health/live)" = Healthy
+          docker compose exec -T postgres psql -U trono -d trono -v ON_ERROR_STOP=1 -c 'SELECT PostGIS_Version();'
+      - if: always()
+        run: docker compose down

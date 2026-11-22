@@ -1,0 +1,32 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: infrastructure/api.Dockerfile
+    ports:
+      - "127.0.0.1:5080:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__Identity: "Host=postgres;Database=trono;Username=trono;Password=${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD no arquivo .env}"
+      Identity__SessionCleanup__Enabled: "${IDENTITY_SESSION_CLEANUP_ENABLED:-false}"
+      Identity__SessionCleanup__BatchSize: "${IDENTITY_SESSION_CLEANUP_BATCH_SIZE:-100}"
+      Identity__SessionCleanup__IntervalMinutes: "${IDENTITY_SESSION_CLEANUP_INTERVAL_MINUTES:-15}"
+
+  postgres:
+    image: postgis/postgis:17-3.5
+    environment:
+      POSTGRES_DB: trono
+      POSTGRES_USER: trono
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD no arquivo .env}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - trono-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U trono -d trono"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  trono-postgres:

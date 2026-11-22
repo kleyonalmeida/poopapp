@@ -1,0 +1,7 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Trono.Api/Trono.Api.csproj" />
+    <Project Path="src/Trono.Modules.Identity/Trono.Modules.Identity.csproj" />
+  </Folder>
+  <Project Path="../../tests/api/Trono.IntegrationTests/Trono.IntegrationTests.csproj" />
+</Solution>

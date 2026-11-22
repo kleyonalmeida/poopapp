@@ -1,0 +1,11 @@
+**/bin
+**/obj
+**/.git
+**/.dart_tool
+**/build
+.env
+.env.*
+apps/mobile
+.codex
+.agents
+.aws
